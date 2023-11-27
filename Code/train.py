@@ -3,18 +3,14 @@ import torch
 import numpy as np
 from gpt_model import GPT
 from config import get_batch_dims 
-from tokenization import get_subword_encoding
-from nltk.tokenize import word_tokenize
 import os
 
 batch_num, batch_size = get_batch_dims()
 eval_it = 40
 learning_rate = 3e-4
 max_iters = 2000
-eval_interval = 100
+eval_interval = 500
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
-
-enc = get_subword_encoding()
 
 os.chdir("../Data")
 with open('book.txt', 'r', encoding='utf-8') as f:
@@ -27,8 +23,8 @@ vocab_size = len(set(chars))
 stoi = { ch:i for i,ch in enumerate(chars) }
 itos = { i:ch for i,ch in enumerate(chars) }
 encode = lambda s: [stoi[c] for c in s] # encoder: take a string, output a list of integers
-decode = lambda l: ''.join([itos[i] + ' ' for i in l]) # decoder: take a list of integers, output a string
-
+decode = lambda l: ''.join([itos[i] for i in l]) # decoder: take a list of integers, output a string
+ 
 # Train and test splits
 data = torch.tensor(encode(text), dtype=torch.long)
 vocab_size = len(set(chars))
@@ -66,29 +62,31 @@ def estimate_loss():
     model.train()
     return out
 
-model = GPT(vocab_size)
+model = torch.load("model.pth")
+#model = GPT(vocab_size)
 m = model.to(device)
 
 # create a PyTorch optimizer
-optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate)
+# optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate)
 
-for iter in range(max_iters):
-    # every once in a while evaluate the loss on train and val sets
-    if iter % eval_interval == 0 or iter == max_iters - 1:
-        losses = estimate_loss()
-        print(f"step {iter}: train loss {losses['train']:.4f}, val loss {losses['val']:.4f}")
+# for iter in range(max_iters):
+#     # every once in a while evaluate the loss on train and val sets
+#     if iter % eval_interval == 0 or iter == max_iters - 1:
+#         losses = estimate_loss()
+#         print(f"step {iter}: train loss {losses['train']:.4f}, val loss {losses['val']:.4f}")
 
-    # sample a batch of data
-    xb, yb = get_batch('train')
+#     # sample a batch of data
+#     xb, yb = get_batch('train')
 
-    # evaluate the loss
-    logits, loss = model(xb, yb)
-    optimizer.zero_grad(set_to_none=True)
-    loss.backward()
-    optimizer.step()
+#     # evaluate the loss
+#     logits, loss = model(xb, yb)
+#     optimizer.zero_grad(set_to_none=True)
+#     loss.backward()
+#     optimizer.step()
 
-# generate from the model
+# # generate from the model
 context = torch.zeros((1, 1), dtype=torch.long, device=device)
-torch.save(m, 'model.pth')
-generated_text = m.generate(context, max_new_tokens=500)[0].tolist()
+w = torch.tensor([encode("What was the name of the person, who killed Roger Ackroyd?")], dtype=torch.long)
+# torch.save(m, 'model.pth')
+generated_text = m.generate(w, max_new_tokens=500)[0].tolist()
 print(decode(generated_text))

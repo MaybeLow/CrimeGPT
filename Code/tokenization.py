@@ -1,4 +1,4 @@
-import tiktoken
+#import tiktoken
 
 def create_token_dic(text):
     unique_chars = sorted(set(text))
@@ -14,6 +14,6 @@ def detokenize(text, tok_to_char):
     detokenized_text = [tok_to_char[token] for token in text]
     return detokenized_text
 
-def get_subword_encoding():
-    enc = tiktoken.get_encoding("gpt2")
-    return enc
+#def get_subword_encoding():
+#    enc = tiktoken.get_encoding("gpt2")
+  #  return enc
